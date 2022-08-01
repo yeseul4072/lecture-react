@@ -11,7 +11,7 @@ const tag = "[main]";
 
 document.addEventListener("DOMContentLoaded", main);
 
-function main() {
+function main() { // MVC 각 계층 초기화
   console.log(tag, "main");
 
   const store = new Store(storage);
