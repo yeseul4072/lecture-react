@@ -1,3 +1,4 @@
+import { on } from "./helpers.js";
 import { TabType } from "./views/TabView.js";
 
 const tag = "[Controller]";
@@ -10,7 +11,7 @@ export default class Controller {
       searchResultView,
       tabView,
       keywordListView,
-      historyListView,
+      historyListView
     }
   ) {
     console.log(tag, "constructor");
@@ -22,64 +23,62 @@ export default class Controller {
     this.tabView = tabView;
     this.keywordListView = keywordListView;
     this.historyListView = historyListView;
-
+    
     this.subscribeViewEvents();
     this.render();
   }
 
+  //View에서 발생한 커스텀 이벤트 수신
   subscribeViewEvents() {
     this.searchFormView
-      .on("@submit", (event) => this.search(event.detail.value))
-      .on("@reset", () => this.reset());
-
-    this.tabView.on("@change", (event) => this.changeTab(event.detail.value));
-
-    this.keywordListView.on("@click", (event) =>
+    .on('@submit', (event) => 
       this.search(event.detail.value)
+    ).on('@reset', () => 
+      this.reset()
     );
 
-    this.historyListView
-      .on("@click", (event) => this.search(event.detail.value))
-      .on("@remove", (event) => this.removeHistory(event.detail.value));
+    this.tabView.
+    on('@change', (event) => 
+      this.changeTab(event.detail.value)
+    )
+
+    this.keywordListView.
+    on("@click", event => 
+      this.search(event.detail.value)
+    )
+
+    this.historyListView.
+    on("@click", event => 
+      this.search(event.detail.value)
+    ).on("@remove", (event) => 
+      this.removeHistory(event.detail.value)
+    )
   }
 
   search(keyword) {
-    console.log(tag, "search", keyword);
-
+    console.log(tag, keyword);
     this.store.search(keyword);
     this.render();
-  }
+  } 
 
   reset() {
     console.log(tag, "reset");
-
-    this.store.searchKeyword = "";
     this.store.searchResult = [];
-    this.render();
-  }
-
-  changeTab(tab) {
-    console.log(tag, "changeTab", tab);
-
-    this.store.selectedTab = tab;
-    this.render();
-  }
-
-  removeHistory(keyword) {
-    this.store.removeHistory(keyword);
+    this.store.searchKeyword = "";
     this.render();
   }
 
   render() {
-    if (this.store.searchKeyword.length > 0) {
+    if(this.store.searchKeyword.length > 0) {
       return this.renderSearchResult();
     }
 
     this.tabView.show(this.store.selectedTab);
-    if (this.store.selectedTab === TabType.KEYWORD) {
+
+    if(this.store.selectedTab === TabType.KEYWORD) {
       this.keywordListView.show(this.store.getKeywordList());
       this.historyListView.hide();
-    } else if (this.store.selectedTab === TabType.HISTORY) {
+    } else if(this.store.selectedTab === TabType.HISTORY){
       this.keywordListView.hide();
       this.historyListView.show(this.store.getHistoryList());
     } else {
@@ -90,11 +89,24 @@ export default class Controller {
   }
 
   renderSearchResult() {
-    this.searchFormView.show(this.store.searchKeyword);
     this.tabView.hide();
     this.keywordListView.hide();
     this.historyListView.hide();
 
     this.searchResultView.show(this.store.searchResult);
+    this.searchFormView.show(this.store.searchKeyword);
+  }
+
+  changeTab(tab) {
+    console.log(tag, 'changeTab', tab);
+
+    this.store.selectedTab = tab;
+    this.render();
+  }
+
+  removeHistory(keyword) {
+    console.log(keyword);
+    this.store.removeHistory(keyword);
+    this.render();
   }
 }

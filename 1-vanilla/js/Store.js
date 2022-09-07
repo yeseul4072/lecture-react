@@ -1,5 +1,5 @@
-import { TabType } from "./views/TabView.js";
 import { createNextId } from "./helpers.js";
+import { TabType } from "./views/TabView.js";
 
 const tag = "[Store]";
 
@@ -11,23 +11,32 @@ export default class Store {
 
     this.storage = storage;
 
-    this.searchKeyword = "";
+    // 검색 결과
     this.searchResult = [];
+    this.searchKeyword = "";
     this.selectedTab = TabType.KEYWORD;
   }
 
   search(keyword) {
     this.searchKeyword = keyword;
-    this.searchResult = this.storage.productData.filter((product) =>
+    this.searchResult = this.storage.productData.filter((product) => 
       product.name.includes(keyword)
     );
+
+    // 검색어 최근 검색어 목록에 추가
     this.addHistory(keyword);
   }
 
+  /**
+   * 추천 검색어 목록 반환
+   */
   getKeywordList() {
     return this.storage.keywordData;
   }
 
+  /**
+   * 최근 검색어 목록 반환
+   */
   getHistoryList() {
     return this.storage.historyData.sort(this._sortHistory);
   }
@@ -37,25 +46,24 @@ export default class Store {
   }
 
   removeHistory(keyword) {
-    this.storage.historyData = this.storage.historyData.filter(
-      (history) => history.keyword !== keyword
-    );
+    this.storage.historyData = this.storage.historyData.filter((history) => history.keyword !== keyword);
   }
 
-  addHistory(keyword = "") {
+  addHistory(keyword) {
     keyword = keyword.trim();
-    if (!keyword) {
+    if(!keyword) {
       return;
     }
 
-    const hasHistory = this.storage.historyData.some(
-      (history) => history.keyword === keyword
-    );
-    if (hasHistory) this.removeHistory(keyword);
+    // 최근 검색어에 이미 있는지 확인
+    const hasHistory = this.storage.historyData.some(history => history.keyword === keyword);
+    if(hasHistory) {
+      this.removeHistory(keyword);
+    }
 
     const id = createNextId(this.storage.historyData);
     const date = new Date();
-    this.storage.historyData.push({ id, keyword, date });
+    this.storage.historyData.push({id, keyword, date});
     this.storage.historyData = this.storage.historyData.sort(this._sortHistory);
   }
 }
