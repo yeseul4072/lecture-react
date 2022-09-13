@@ -1,4 +1,15 @@
+import { formatRelativeDate } from "./js/helpers.js";
 import store from "./js/Store.js";
+
+const TabType = {
+    KEYWORD: 'KEYWORD',
+    HISTORY: 'HISTORY',
+}
+
+const TabLabel = {
+    [TabType.KEYWORD]: '추천 검색어',
+    [TabType.HISTORY]: '최근 검색어',
+}
 
 // Component 클래스를 상속하는 클래스
 class App extends React.Component {
@@ -9,8 +20,20 @@ class App extends React.Component {
         this.state = {
             searchKeyword: "",
             searchResult: [],
-            submitted: false
+            submitted: false,
+            selectedTab: TabType.KEYWORD,
+            keywordList: [],
+            historyList: [],
         };
+    }
+
+    componentDidMount() { // DOM이 마운트된 직후에 호출하는 메소드
+        const keywordList = store.getKeywordList()
+        const historyList = store.getHistoryList()
+        this.setState({ 
+            keywordList,
+            historyList,
+        })
     }
 
     handleChangeInput(event) {
@@ -29,16 +52,18 @@ class App extends React.Component {
     handleSubmit(event) {
         // 화면 refresh 막기
         event.preventDefault();
-        console.log("handleSubmit: ", this.state.searchKeyword);
-
         this.search(this.state.searchKeyword);
     }
-
+    
     search(searchkeyword) {
         const searchResult = store.search(searchkeyword);
+        const historyList = store.getHistoryList();
+
         this.setState({ 
+            searchKeyword: searchkeyword,
             searchResult,
             submitted: true,
+            historyList,
         }); // 변경된 필드만 병합하는 방식으로 동작!
     }
 
@@ -57,6 +82,15 @@ class App extends React.Component {
                 submitted: false,
             })
         })
+    }
+
+    handleClickRemoveHistory(event, keyword) {
+        // 이벤트 전파 차단 - button에서 발생한 이벤트를 상위 태그인 li로 가는 것 막기!
+        event.stopPropagation(); 
+
+        store.removeHistory(keyword);
+        const historyList = store.getHistoryList();
+        this.setState({historyList});
     }
 
     render() { // 리액트 엘리먼트를 반환해야하는 render()
@@ -85,6 +119,8 @@ class App extends React.Component {
                 <ul className="result">
                     {this.state.searchResult.map(item => {
                         return (
+                            // DOM은 트리 구조이기 때문에 가상 DOM을 실제 DOM과 매번 비교하기 위해서는 많은 시간이 든다.
+                            // 따라서 REACT는 리스트의 key 값을 기준으로 비교를 하게 된다.
                             <li key={item.id}>
                                 <img src={item.imageUrl} alt={item.name}/>
                                 <p>{item.name}</p>
@@ -97,6 +133,52 @@ class App extends React.Component {
             )
         )
 
+        const keywordList = (
+            <ul className="list">
+                {this.state.keywordList.map((item, index) => {
+                    return (
+                        <li key={item.id} onClick={() => this.search(item.keyword)}>
+                            <span className="number">{index + 1}</span>
+                            <span>{item.keyword}</span>
+                        </li>
+                    )
+                })}
+            </ul>
+        )
+
+        const historyList = (
+            <ul className="list">
+                {this.state.historyList.map(({id, keyword, date}) => {
+                    return (
+                        <li key={id} onClick={() => this.search(keyword)}>
+                            <span>{keyword}</span>
+                            <span className="date">{formatRelativeDate(date)}</span>
+                            <button className="btn-remove" onClick={event => this.handleClickRemoveHistory(event, keyword)}></button>
+                        </li>
+                    );
+                    })}
+            </ul>
+        );
+
+        const tabs = (
+            <>
+            <ul className="tabs">
+                {Object.values(TabType).map(tabType => {
+                    return (
+                        <li 
+                        className={this.state.selectedTab === tabType ? "active": ""} 
+                        onClick={() => this.setState({selectedTab: tabType})}
+                        key={tabType}>{TabLabel[tabType]}
+                        </li>
+                    )
+                })}
+            </ul>
+            {this.state.selectedTab === TabType.KEYWORD && keywordList}
+            {this.state.selectedTab === TabType.HISTORY && historyList}
+            </>
+        )
+        
+
         return (
             <> 
                 <header>
@@ -105,7 +187,7 @@ class App extends React.Component {
                 <div className="container">
                     { searchForm }
                     <div className="content">
-                        { this.state.submitted && searchResult }
+                        { this.state.submitted ? searchResult : tabs }
                     </div>
                 </div>
             </>

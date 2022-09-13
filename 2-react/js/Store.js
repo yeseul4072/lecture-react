@@ -14,12 +14,13 @@ class Store {
   }
 
   search(keyword) {
+
+    this.addHistory(keyword);
+
     return this.storage.productData.filter((product) => 
       product.name.includes(keyword)
     );
 
-    // 검색어 최근 검색어 목록에 추가
-    this.addHistory(keyword);
   }
 
   /**
